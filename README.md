@@ -5,7 +5,11 @@
     </strong>
 </div>
 
+<br>
+
+<p align="center">
 <img align="center" alt="A gif showcasing Nubooru's various features" src="/static/nubooru.gif"></img>
+</p>
 
 <br>
 
