@@ -5,7 +5,7 @@
     </strong>
 </div>
 
-<img align="center" alt="A gif showcasing Nubooru's various features" src="/state/nubooru.gif"></img>
+<img align="center" alt="A gif showcasing Nubooru's various features" src="/static/nubooru.gif"></img>
 
 <br>
 
