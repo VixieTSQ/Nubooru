@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { JSDOM } from 'jsdom';
 import setCookies from 'set-cookie-parser';
 import he from 'he';
-import { GELBOORU_ENDPOINT as ENDPOINT } from './Utils';
+import { assert, GELBOORU_ENDPOINT as ENDPOINT } from './Utils';
 import type { DOMWindow } from 'jsdom';
 
 export const userIdCookieKey = "user_id";
@@ -44,6 +44,7 @@ export const getPost = async (fetch: typeof globalThis.fetch, id: string | numbe
     return transformPost(posts.post[0]);
 }
 
+// TODO: We should scrape this from the post page instead so we don't have to make this extra fetch.
 export const getTags = async (fetch: typeof globalThis.fetch, tags: string): Promise<Tag[]> => {
     const requestUrl = new URL(ENDPOINT + "index.php?page=dapi&s=tag&q=index&json=1&orderby=count&limit=500");
     requestUrl.searchParams.set("names", tags);
@@ -112,6 +113,14 @@ export const getPostInfo = async (svelteFetch: typeof globalThis.fetch, postId: 
     }
     if (hearts === undefined) error(502);
 
+    const notesContainerElement = mainContainerElement.querySelector("#notes");
+    const imageElement = mainContainerElement.querySelector(".image-container");
+    if (notesContainerElement === null || imageElement === null) error(502);
+    const imageWidth = Number(imageElement.attributes.getNamedItem("data-width")?.value);
+    const imageHeight = Number(imageElement.attributes.getNamedItem("data-height")?.value);
+    if (Number.isNaN(imageWidth) || Number.isNaN(imageHeight)) error(502);
+    const translations = scrapeTranslations(notesContainerElement, window, imageWidth, imageHeight);
+
     const suggestedPostsElement = mainContainerElement.querySelector("form ~ div");
     if (suggestedPostsElement === null) error(502);
     const suggestedPostElements: NodeListOf<HTMLAnchorElement> = suggestedPostsElement.querySelectorAll("a");
@@ -129,7 +138,8 @@ export const getPostInfo = async (svelteFetch: typeof globalThis.fetch, postId: 
         comments,
         suggestedPosts,
         isFavorited,
-        hearts
+        hearts,
+        translations
     }
 }
 
@@ -213,7 +223,6 @@ const scrapeComment = (comment: Element, window: DOMWindow): Comment => {
 
     const isFlagged = bodyElement.querySelector(".info:nth-of-type(2) > b") !== null;
 
-
     return {
         id,
         authorProfilePictureUrl,
@@ -224,6 +233,101 @@ const scrapeComment = (comment: Element, window: DOMWindow): Comment => {
         hearts,
         isFlagged
     };
+}
+
+const scrapeTranslations = (translationsElement: Element, window: DOMWindow, imageWidth: number, imageHeight: number): Translation[] => {
+    const translationElements = translationsElement.querySelectorAll("article");
+    const translations = translationElements.values().map((translationElement) => {
+        const id = Number(translationElement.attributes.getNamedItem("data-id")?.value);
+        const width = Number(translationElement.attributes.getNamedItem("data-width")?.value);
+        const height = Number(translationElement.attributes.getNamedItem("data-height")?.value);
+        const x = Number(translationElement.attributes.getNamedItem("data-x")?.value);
+        const y = Number(translationElement.attributes.getNamedItem("data-y")?.value);
+        const bodyRaw = translationElement.attributes.getNamedItem("data-body")?.value;
+        if (Number.isNaN(id) || Number.isNaN(width) || Number.isNaN(height) || Number.isNaN(x) || Number.isNaN(y) || bodyRaw === undefined) {
+            error(502);
+        }
+
+        console.log(bodyRaw);
+
+        const bodyFragment = JSDOM.fragment(`<div>${bodyRaw}</div>`);
+        const body = bodyFragment.childNodes.values()
+            .filter((node) => node.nodeType === node.ELEMENT_NODE || node.nodeType === node.TEXT_NODE)
+            .map(parseTranslationContents).toArray();
+
+        const scaleX = 100 / imageWidth;
+        const scaleY = 100 / imageHeight;
+        return {
+            id,
+            width: width * scaleX,
+            height: height * scaleY,
+            x: x * scaleX,
+            y: y * scaleY,
+            body
+        }
+    }).toArray();
+
+    return translations
+}
+const parseTranslationContents = (node: Node): TranslationText => {
+    if (node.nodeType === node.TEXT_NODE) {
+        return (node as Text).data;
+    } else {
+        const htmlNode = node as HTMLElement;
+
+        let color = "currentcolor";
+        if (htmlNode.style.color !== "") {
+            color = htmlNode.style.color;
+        } else if (htmlNode.nodeName === "FONT") {
+            const colorAttribute = htmlNode.attributes.getNamedItem("color")?.value;
+            if (colorAttribute !== undefined) color = colorAttribute;
+        }
+
+        let fontSize = "1em";
+        if (htmlNode.style.fontSize !== "") {
+            fontSize = htmlNode.style.fontSize;
+        } else if (htmlNode.nodeName === "FONT") {
+            const sizeAttribute = htmlNode.attributes.getNamedItem("size")?.value;
+            if (sizeAttribute !== undefined) {
+                if (sizeAttribute.startsWith("+")) {
+                    fontSize = `${(Number(sizeAttribute.slice(1)) * 0.25) + 1}em`;
+                } else if (sizeAttribute.startsWith("-")) {
+                    fontSize = `${1 - (Number(sizeAttribute.slice(1)) * 0.25)}em`;
+                } else {
+                    fontSize = `${(Number(sizeAttribute) * 0.25) + 0.25}rem`;
+                }
+            };
+        } else if (htmlNode.nodeName === "TN") {
+            fontSize = "0.75rem";
+        } else if (htmlNode.nodeName === "BIG") {
+            fontSize = "1.25em";
+        } else if (htmlNode.nodeName === "SMALL") {
+            fontSize = "0.75em";
+        }
+
+        const contents = htmlNode.childNodes.values()
+            .filter((node) => node.nodeType === node.ELEMENT_NODE || node.nodeType === node.TEXT_NODE)
+            .map(parseTranslationContents).toArray();
+
+        if (htmlNode.nodeName === "A") {
+            return {
+                type: "anchor",
+                href: htmlNode.attributes.getNamedItem("href")?.value ?? "",
+                color,
+                fontSize,
+                contents
+            }
+        } else {
+            return {
+                type: htmlNode.nodeName === "P" || htmlNode.nodeName === "TN" ? "paragraph" :
+                    htmlNode.nodeName === "DIV" ? "line" :
+                        "inline",
+                color,
+                fontSize,
+                contents
+            }
+        }
+    }
 }
 
 export type AutocompleteTag = {
@@ -475,3 +579,27 @@ export type Comment = {
     hearts: number,
     isFlagged: boolean
 }
+
+export type Translation = {
+    id: number,
+    width: number,
+    height: number,
+    x: number,
+    y: number,
+    body: TranslationText[]
+}
+type TranslationTextStyles = {
+    // TODO: Maybe I'll support more in the future but meh.
+    color: string,
+    fontSize: string,
+}
+export type TranslationText = string |
+    ({
+        type: "inline" | "line" | "paragraph",
+        contents: TranslationText[]
+    } & TranslationTextStyles) |
+    ({
+        type: "anchor",
+        href: string,
+        contents: TranslationText[]
+    } & TranslationTextStyles);

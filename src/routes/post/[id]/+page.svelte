@@ -26,6 +26,7 @@
     import { sanitizeUrl } from "@braintree/sanitize-url";
     import { MetaTags } from "svelte-meta-tags";
     import { page } from "$app/state";
+    import Translation from "./Translation.svelte";
 
     const thumbnailCache = getThumbnailCache();
 
@@ -114,6 +115,15 @@
     $effect(() => {
         localStorage.setItem("defaultVolume", String(volume));
     });
+
+    let showTranslations = $state(
+        browser
+            ? (localStorage.getItem("showTranslations") ?? "true") === "true"
+            : true,
+    );
+    $effect(() => {
+        localStorage.setItem("showTranslations", String(showTranslations));
+    });
 </script>
 
 <MetaTags title={postTitle} />
@@ -179,6 +189,44 @@
                 </div>
             {:else}
                 <Dialog.Root>
+                    {#await extra then extra}
+                        <section
+                            class="absolute inset-0 z-10 group/overlay"
+                            style:aspect-ratio="{imageWidth} / {imageHeight}"
+                        >
+                            <h2 class="sr-only">Translations</h2>
+
+                            <ul class={[!showTranslations && "sr-only"]}>
+                                {#each extra.translations as translation}
+                                    <Translation {translation} />
+                                {/each}
+                            </ul>
+                            <button
+                                class="translate-y-4 group-hover/overlay:translate-y-0 opacity-0 group-hover/overlay:opacity-100 transition-all absolute z-10 bottom-2 right-2 rounded-full border-2 size-10 flex-center shadow-lg/40 bg-neutral-500/30 text-neutral-800"
+                                onclick={() =>
+                                    (showTranslations = !showTranslations)}
+                            >
+                                <span class="sr-only">
+                                    {#if showTranslations}
+                                        Hide translations
+                                    {:else}
+                                        Show translations
+                                    {/if}
+                                </span>
+                                {#if showTranslations}
+                                    <i
+                                        class="fa-solid fa-eye"
+                                        aria-hidden="true"
+                                    ></i>
+                                {:else}
+                                    <i
+                                        class="fa-solid fa-eye-slash"
+                                        aria-hidden="true"
+                                    ></i>
+                                {/if}
+                            </button>
+                        </section>
+                    {/await}
                     <Dialog.Trigger
                         class="2xl:h-[calc(100%-5rem)] mb-20 2xl:mb-0 overflow-hidden pointer-events-none min-w-0 max-w-full"
                         disabled={data.post.sample_url === ""}
@@ -188,6 +236,12 @@
                             style:aspect-ratio="{imageWidth} / {imageHeight}"
                         >
                             <!-- TODO: This should be w-full on mobile -->
+                            <!-- TODO: Image loading sometimes spontaneously fails, as Gelbooru redirects the image URL
+                             to the post page for unknown reasons (rate limiting? I know the img url can be different
+                             on different post requests for load balancing reasons)
+                             But when I reload the page it's perfectly fine, so we should retry this if it it fails.
+                             (Forget if I was reloading the page entirely or not, which would mean we're refetching
+                             the post, meaning we probably get a *different* url and that's why it works. Hopefully not) -->
                             <img
                                 src={sampleUrl}
                                 alt=""

@@ -2,6 +2,7 @@
 @plugin 'tailwind-scrollbar';
 
 @theme {
+    --color-neutral-800: #eeeeee;
     --color-neutral-700: #C8C8C8;
     --color-neutral-300: #0C0C0C;
     --color-neutral-400: #171717;
