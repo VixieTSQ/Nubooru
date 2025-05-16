@@ -2,7 +2,11 @@
     import { enhance } from "$app/forms";
     import HeartButton from "$lib/HeartButton.svelte";
     import MaybePromiseOrDefault from "$lib/MaybePromiseOrDefault.svelte";
-    import { getUserProfilePictureUrl, mapMaybePromise } from "$lib/Utils";
+    import {
+        getUserProfilePictureUrl,
+        mapMaybePromise,
+        outerMainContainerSelector,
+    } from "$lib/Utils";
     import { Dialog, DropdownMenu } from "bits-ui";
     import type { PageServerData } from "./$types";
     import GelbooruLogo from "$lib/assets/gelbooruLogo.svelte";
@@ -163,67 +167,70 @@
                 ></i>
                 <i class="sr-only">More options</i>
             </DropdownMenu.Trigger>
-            <DropdownMenu.Content
-                class="w-48 rounded-2xl bg-neutral-400 shadow-lg/40 py-3 overflow-hidden z-10 md:hidden"
-            >
-                <DropdownItem
-                    onSelect={() => {
-                        if (bookmarkForm === undefined) {
-                            return;
-                        }
+            <DropdownMenu.Portal to={outerMainContainerSelector}>
+                <DropdownMenu.Content
+                    class="w-48 rounded-2xl bg-neutral-400 shadow-lg/40 py-3 overflow-hidden z-20"
+                >
+                    <DropdownItem
+                        class="md:hidden"
+                        onSelect={() => {
+                            if (bookmarkForm === undefined) {
+                                return;
+                            }
 
-                        bookmarkForm.requestSubmit();
-                    }}
-                >
-                    <span class="inline-block size-5">
-                        <div class="flex-center size-full">
-                            <MaybePromiseOrDefault
-                                data={isBookmarked}
-                                defaultData={false}
-                            >
-                                {#snippet children(isBookmarkedOrDefault)}
-                                    {#if isBookmarkedOrDefault}
-                                        <i
-                                            class="fa-solid fa-bookmark text-lg text-copyright-tag"
-                                            aria-label="Already bookmarked"
-                                        ></i>
-                                    {:else}
-                                        <i
-                                            class="fa-regular fa-bookmark text-lg"
-                                            aria-label="Click to bookmark"
-                                        ></i>
-                                    {/if}
-                                {/snippet}
-                            </MaybePromiseOrDefault>
-                        </div>
-                    </span>
-                    Bookmark
-                </DropdownItem>
-                <DropdownItem
-                    onSelect={() => {
-                        open(
-                            `https://gelbooru.com/index.php?page=post&s=view&id=${post.id}`,
-                        );
-                    }}
-                >
-                    <span class="inline-block size-5">
-                        <GelbooruLogo />
-                    </span>
-                    Open on Gelbooru
-                </DropdownItem>
-                <DropdownItem
-                    onSelect={() => {
-                        isReportDialogOpen = true;
-                    }}
-                >
-                    <span class="inline-block size-5">
-                        <div class="flex-center size-full">
-                            <i class="fa-regular fa-flag text-lg"></i>
-                        </div>
-                    </span>
-                    Report
-                </DropdownItem>
-            </DropdownMenu.Content>
+                            bookmarkForm.requestSubmit();
+                        }}
+                    >
+                        <span class="inline-block size-5">
+                            <div class="flex-center size-full">
+                                <MaybePromiseOrDefault
+                                    data={isBookmarked}
+                                    defaultData={false}
+                                >
+                                    {#snippet children(isBookmarkedOrDefault)}
+                                        {#if isBookmarkedOrDefault}
+                                            <i
+                                                class="fa-solid fa-bookmark text-lg text-copyright-tag"
+                                                aria-label="Already bookmarked"
+                                            ></i>
+                                        {:else}
+                                            <i
+                                                class="fa-regular fa-bookmark text-lg"
+                                                aria-label="Click to bookmark"
+                                            ></i>
+                                        {/if}
+                                    {/snippet}
+                                </MaybePromiseOrDefault>
+                            </div>
+                        </span>
+                        Bookmark
+                    </DropdownItem>
+                    <DropdownItem
+                        onSelect={() => {
+                            open(
+                                `https://gelbooru.com/index.php?page=post&s=view&id=${post.id}`,
+                            );
+                        }}
+                    >
+                        <span class="inline-block size-5">
+                            <GelbooruLogo />
+                        </span>
+                        Open on Gelbooru
+                    </DropdownItem>
+                    <DropdownItem
+                        onSelect={() => {
+                            isReportDialogOpen = true;
+                        }}
+                    >
+                        <span class="inline-block size-5">
+                            <div class="flex-center size-full">
+                                <i class="fa-regular fa-flag text-lg"></i>
+                            </div>
+                        </span>
+                        Report
+                    </DropdownItem>
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
         </DropdownMenu.Root>
     </div>
 </section>

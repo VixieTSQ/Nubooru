@@ -10,7 +10,7 @@
     } from "$lib/Utils";
     import { preloadData, replaceState } from "$app/navigation";
     import TagList from "./TagList.svelte";
-    import { Dialog } from "bits-ui";
+    import { AspectRatio, Dialog } from "bits-ui";
     import { browser } from "$app/environment";
     import DialogOverlay from "$lib/DialogOverlay.svelte";
     import Post from "$lib/Post.svelte";
@@ -153,11 +153,10 @@
     </aside>
 
     <div
-        class="flex flex-col 2xl:flex-row gap-4 2xl:gap-8 2xl:h-[calc(100vh_-_6.5rem)] grow self-start 2xl:sticky top-22 min-w-0"
+        class="flex flex-col 2xl:flex-row gap-4 2xl:gap-8 2xl:h-[calc(100vh_-_6.5rem)] max-w-full grow self-start 2xl:sticky top-22 min-w-0"
     >
         <div
-            class="relative w-full 2xl:min-w-xl 2xl:w-auto flex flex-col items-center 2xl:block max-w-3xl 2xl:max-w-[var(--width)]"
-            style:--width="{imageWidth}px"
+            class="relative 2xl:min-w-xl max-w-3xl 2xl:max-w-none flex flex-col items-center 2xl:block"
         >
             {#if videoFileExtensions.some( (extension) => sampleUrl.endsWith(extension), )}
                 {@const src = (() => {
@@ -188,125 +187,127 @@
                     </video>
                 </div>
             {:else}
-                <Dialog.Root>
-                    {#await extra then extra}
-                        <section
-                            class="absolute inset-0 z-10 group/overlay"
-                            style:aspect-ratio="{imageWidth} / {imageHeight}"
+                <div class="absolute inset-0 bottom-20">
+                    <div
+                        class="z-10 max-h-full relative group/overlay"
+                        style:aspect-ratio="{imageWidth} / {imageHeight}"
+                    >
+                        {#await extra then extra}
+                            <section class={[!showTranslations && "sr-only"]}>
+                                <h2 class="sr-only">Translations</h2>
+                                <ul>
+                                    {#each extra.translations as translation}
+                                        <Translation {translation} />
+                                    {/each}
+                                </ul>
+                            </section>
+                        {/await}
+                        <button
+                            class="translate-y-3 group-hover/overlay:translate-y-0 opacity-0 group-hover/overlay:opacity-100 transition-all absolute z-10 bottom-2 right-2 rounded-full border-2 size-10 flex-center shadow-lg/40 overflow-hidden text-neutral-800 supports-backdrop-filter:backdrop-blur-sm group/button"
+                            onclick={() =>
+                                (showTranslations = !showTranslations)}
                         >
-                            <h2 class="sr-only">Translations</h2>
-
-                            <ul class={[!showTranslations && "sr-only"]}>
-                                {#each extra.translations as translation}
-                                    <Translation {translation} />
-                                {/each}
-                            </ul>
-                            <button
-                                class="translate-y-4 group-hover/overlay:translate-y-0 opacity-0 group-hover/overlay:opacity-100 transition-all absolute z-10 bottom-2 right-2 rounded-full border-2 size-10 flex-center shadow-lg/40 bg-neutral-500/30 text-neutral-800"
-                                onclick={() =>
-                                    (showTranslations = !showTranslations)}
-                            >
-                                <span class="sr-only">
-                                    {#if showTranslations}
-                                        Hide translations
-                                    {:else}
-                                        Show translations
-                                    {/if}
-                                </span>
+                            <div
+                                class="not-supports-backdrop-filter:blur-sm absolute inset-0 -z-10 bg-neutral-500/30 group-active/button:brightness-150"
+                            ></div>
+                            <span class="sr-only">
                                 {#if showTranslations}
-                                    <i
-                                        class="fa-solid fa-eye"
-                                        aria-hidden="true"
-                                    ></i>
+                                    Hide translations
                                 {:else}
-                                    <i
-                                        class="fa-solid fa-eye-slash"
-                                        aria-hidden="true"
-                                    ></i>
+                                    Show translations
                                 {/if}
-                            </button>
-                        </section>
-                    {/await}
-                    <Dialog.Trigger
-                        class="2xl:h-[calc(100%-5rem)] mb-20 2xl:mb-0 overflow-hidden pointer-events-none min-w-0 max-w-full"
-                        disabled={data.post.sample_url === ""}
+                            </span>
+                            {#if showTranslations}
+                                <i class="fa-solid fa-eye" aria-hidden="true"
+                                ></i>
+                            {:else}
+                                <i
+                                    class="fa-solid fa-eye-slash"
+                                    aria-hidden="true"
+                                ></i>
+                            {/if}
+                        </button>
+                        <Dialog.Root>
+                            <Dialog.Trigger
+                                class="absolute inset-0 -z-10"
+                                disabled={data.post.sample_url === ""}
+                            >
+                                <span class="sr-only">Expand post</span>
+                            </Dialog.Trigger>
+                            <Dialog.Portal to={outerMainContainerSelector}>
+                                <DialogOverlay />
+                                <Dialog.Content
+                                    onCloseAutoFocus={(event) =>
+                                        event.preventDefault()}
+                                >
+                                    <img
+                                        src={data.post.file_url}
+                                        alt=""
+                                        class="fixed top-1/2 left-1/2 -translate-1/2 z-70 max-w-screen max-h-screen p-4 md:p-8 pointer-events-none"
+                                    />
+                                </Dialog.Content>
+                            </Dialog.Portal>
+                        </Dialog.Root>
+                        <div
+                            class="h-16 mt-4 2xl:min-w-xl w-full bg-neutral-450 rounded-sm absolute -bottom-20"
+                        >
+                            <InteractionBar post={data.post} {extra} />
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute inset-0 bottom-20 -z-10">
+                    <div
+                        class="z-10 max-h-full relative group/overlay"
+                        style:aspect-ratio="{imageWidth} / {imageHeight}"
                     >
                         <div
-                            class="relative h-full min-w-0 max-w-full"
+                            class="bg-invisibles -z-10 absolute inset-0 rounded-sm overflow-hidden supports-backdrop-filter:after:backdrop-blur-sm supports-backdrop-filter:after:absolute supports-backdrop-filter:after:inset-0 not-supports-backdrop-filter:blur-sm text-transparent"
                             style:aspect-ratio="{imageWidth} / {imageHeight}"
-                        >
-                            <!-- TODO: This should be w-full on mobile -->
-                            <!-- TODO: Image loading sometimes spontaneously fails, as Gelbooru redirects the image URL
-                             to the post page for unknown reasons (rate limiting? I know the img url can be different
-                             on different post requests for load balancing reasons)
-                             But when I reload the page it's perfectly fine, so we should retry this if it it fails.
-                             (Forget if I was reloading the page entirely or not, which would mean we're refetching
-                             the post, meaning we probably get a *different* url and that's why it works. Hopefully not) -->
-                            <img
-                                src={sampleUrl}
-                                alt=""
-                                class={[
-                                    "transition-opacity duration-200 min-w-0 h-auto w-full pointer-events-auto rounded-sm",
-                                    browser && "opacity-0",
-                                ]}
-                                style:aspect-ratio="{imageWidth} / {imageHeight}"
-                                width={imageWidth}
-                                height={imageHeight}
-                                fetchpriority="high"
-                                bind:this={sampleImage}
-                                onload={(event) => {
-                                    event.currentTarget.classList.add(
-                                        "opacity-100",
-                                    );
-                                    event.currentTarget.classList.remove(
-                                        "opacity-0",
-                                    );
-                                }}
-                            />
-                            <div
-                                class="bg-invisibles -z-10 absolute inset-0 rounded-sm overflow-hidden supports-backdrop-filter:after:backdrop-blur-sm supports-backdrop-filter:after:absolute supports-backdrop-filter:after:inset-0 not-supports-backdrop-filter:blur-sm text-transparent"
-                                style:aspect-ratio="{imageWidth} / {imageHeight}"
-                                aria-hidden="true"
-                                use:acquireCachedThumbnail={{
-                                    postId: data.post.id,
-                                    cache: thumbnailCache,
-                                }}
-                            ></div>
-                        </div>
-                    </Dialog.Trigger>
-                    <Dialog.Portal to={outerMainContainerSelector}>
-                        <DialogOverlay />
-                        <Dialog.Content
-                            onCloseAutoFocus={(event) => event.preventDefault()}
-                        >
-                            <img
-                                src={data.post.file_url}
-                                alt=""
-                                class="fixed top-1/2 left-1/2 -translate-1/2 z-70 max-w-screen max-h-screen p-4 md:p-8 pointer-events-none"
-                            />
-                        </Dialog.Content>
-                    </Dialog.Portal>
-                </Dialog.Root>
-            {/if}
-            <div
-                class="size-full absolute inset-0 bottom-28 pointer-events-none"
-            >
-                <!-- TODO: This is so stupid. I'm 100% certain there's a better way. -->
-                <img
-                    src=""
-                    alt=""
-                    class="invisible min-w-0 max-h-[calc(100%-5rem)] h-auto w-full"
-                    style:aspect-ratio="{imageWidth} / {imageHeight}"
-                    width={imageWidth}
-                    height={imageHeight}
-                    aria-hidden="true"
-                />
-                <div
-                    class="h-16 mt-4 w-full bg-neutral-450 pointer-events-auto rounded-sm"
-                >
-                    <InteractionBar post={data.post} {extra} />
+                            aria-hidden="true"
+                            use:acquireCachedThumbnail={{
+                                postId: data.post.id,
+                                cache: thumbnailCache,
+                            }}
+                        ></div>
+                    </div>
                 </div>
-            </div>
+                <!-- TODO: Weird firefox bug sizes this as if we don't have the pb-20 here. Probably not worth a fix -->
+                <div class="h-full pb-20 overflow-hidden min-w-0 relative">
+                    <div
+                        class="max-h-full"
+                        style:aspect-ratio="{imageWidth} / {imageHeight}"
+                    >
+                        <!-- TODO: This should be w-full on mobile -->
+                        <!-- TODO: Image loading sometimes spontaneously fails, as Gelbooru redirects the image URL
+                            to the post page for unknown reasons (rate limiting? I know the img url can be different
+                            on different post requests for load balancing reasons)
+                            But when I reload the page it's perfectly fine, so we should retry this if it it fails.
+                            (Forget if I was reloading the page entirely or not, which would mean we're refetching
+                            the post, meaning we probably get a *different* url and that's why it works. Hopefully not) -->
+                        <img
+                            src={sampleUrl}
+                            alt=""
+                            class={[
+                                "transition-opacity duration-200 min-w-0 rounded-sm",
+                                browser && "opacity-0",
+                            ]}
+                            style:aspect-ratio="{imageWidth} / {imageHeight}"
+                            width={imageWidth}
+                            height={imageHeight}
+                            fetchpriority="high"
+                            bind:this={sampleImage}
+                            onload={(event) => {
+                                event.currentTarget.classList.add(
+                                    "opacity-100",
+                                );
+                                event.currentTarget.classList.remove(
+                                    "opacity-0",
+                                );
+                            }}
+                        />
+                    </div>
+                </div>
+            {/if}
         </div>
 
         <div
@@ -349,7 +350,9 @@
 
             <section class="self-start w-full">
                 <h2 class="sr-only">Suggested Posts</h2>
-                <ul class="flex items-start gap-4 h-48 justify-evenly w-full">
+                <ul
+                    class="flex items-start gap-4 max-h-48 justify-evenly w-full"
+                >
                     {#await extra}
                         <i class="sr-only">Loading</i>
                         {#each { length: 4 }}

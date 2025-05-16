@@ -19,10 +19,10 @@
         aria-hidden="true"
     ></i>
     <div
-        class="not-group-hover:not-group-focus-within:sr-only absolute top-full left-0 translate-y-2 w-3xs rounded-lg overflow-hidden p-3 shadow-md/25 border border-invisibles z-10"
+        class="not-group-hover:not-group-focus-within:sr-only absolute top-full left-0 translate-y-2 w-3xs rounded-lg overflow-hidden p-3 shadow-md/25 border border-invisibles z-20"
     >
         <div
-            class="supports-backdrop-filter:backdrop-blur-sm not-supports-backdrop-filter:blur-sm absolute inset-0 -z-1 bg-neutral-500/70"
+            class="supports-backdrop-filter:backdrop-blur-sm not-supports-backdrop-filter:blur-sm absolute inset-0 -z-10 bg-neutral-500/70"
         ></div>
         <div>
             {@render translationText({
