@@ -4,7 +4,6 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load = (async (event) => {
     const commentPage = Number(event.url.searchParams.get("comment-page")) ?? 0;
-
     if (Number.isNaN(commentPage)) error(400);
 
     const post = await getPost(event.fetch, event.params.id);

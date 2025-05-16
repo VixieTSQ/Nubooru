@@ -115,11 +115,14 @@ export const getPostInfo = async (svelteFetch: typeof globalThis.fetch, postId: 
 
     const notesContainerElement = mainContainerElement.querySelector("#notes");
     const imageElement = mainContainerElement.querySelector(".image-container");
-    if (notesContainerElement === null || imageElement === null) error(502);
-    const imageWidth = Number(imageElement.attributes.getNamedItem("data-width")?.value);
-    const imageHeight = Number(imageElement.attributes.getNamedItem("data-height")?.value);
-    if (Number.isNaN(imageWidth) || Number.isNaN(imageHeight)) error(502);
-    const translations = scrapeTranslations(notesContainerElement, window, imageWidth, imageHeight);
+    if (notesContainerElement === null) error(502);
+    let translations: Translation[] = [];
+    if (imageElement !== null) {
+        const imageWidth = Number(imageElement.attributes.getNamedItem("data-width")?.value);
+        const imageHeight = Number(imageElement.attributes.getNamedItem("data-height")?.value);
+        if (Number.isNaN(imageWidth) || Number.isNaN(imageHeight)) error(502);
+        translations = scrapeTranslations(notesContainerElement, window, imageWidth, imageHeight);
+    }
 
     const suggestedPostsElement = mainContainerElement.querySelector("form ~ div");
     if (suggestedPostsElement === null) error(502);

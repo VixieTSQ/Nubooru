@@ -102,6 +102,8 @@
         </form>
         <MaybePromiseOrDefault data={isBookmarked} defaultData={false}>
             {#snippet children(isBookmarkedOrDefault)}
+                <!-- TODO: Since we don't actually know our favorites here, this is kinda sad, 
+                mostly if we're just coming from a search for our favorites. Can we use that information?  -->
                 <form
                     action={isBookmarkedOrDefault
                         ? "?/unfavorite"

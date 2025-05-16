@@ -7,7 +7,7 @@
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <li
-    class="absolute bg-invisibles/85 rounded-lg border-2 border-invisibles/90 shadow-md/25 flex justify-end items-end p-0.5 group"
+    class="absolute bg-invisibles/85 rounded-lg border-2 border-invisibles/90 shadow-md/25 flex justify-end items-end p-0.5 group pointer-events-auto"
     tabindex="0"
     style:top="{translation.y}%"
     style:left="{translation.x}%"

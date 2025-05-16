@@ -86,6 +86,9 @@
     );
     let postTitle =
         data.post.title === "" ? "Untitled" : he.decode(data.post.title);
+    let isVideo = $derived(
+        videoFileExtensions.some((extension) => sampleUrl.endsWith(extension)),
+    );
 
     let sampleImage: HTMLImageElement | undefined = $state();
     $effect(() => {
@@ -158,79 +161,49 @@
         <div
             class="relative 2xl:min-w-xl max-w-3xl 2xl:max-w-none flex flex-col items-center 2xl:block"
         >
-            {#if videoFileExtensions.some( (extension) => sampleUrl.endsWith(extension), )}
-                {@const src = (() => {
-                    sampleUrl;
-
-                    const url = new URL(sampleUrl);
-                    const directory1 = url.pathname.slice(8, 10);
-                    const directory2 = url.pathname.slice(11, 13);
-                    const filename = url.pathname.slice(14);
-
-                    return `/video?domain=${encodeURIComponent(url.hostname)}&directory1=${directory1}&directory2=${directory2}&file=${encodeURIComponent(filename)}`;
-                })()}
-
+            <div class="absolute inset-0 bottom-20 pointer-events-none">
                 <div
-                    class="2xl:h-[calc(100%-5rem)] mb-20 2xl:mb-0 w-full min-w-0"
+                    class="z-10 max-h-full relative group/overlay"
+                    style:aspect-ratio="{imageWidth} / {imageHeight}"
                 >
-                    <video
-                        {src}
-                        controls
-                        loop
-                        class="min-w-0 rounded-sm max-h-full"
-                        style:aspect-ratio="{imageWidth} / {imageHeight}"
-                        width={imageWidth}
-                        height={imageHeight}
-                        bind:volume
+                    {#await extra then extra}
+                        <section class={[!showTranslations && "sr-only"]}>
+                            <h2 class="sr-only">Translations</h2>
+                            <ul>
+                                {#each extra.translations as translation}
+                                    <Translation {translation} />
+                                {/each}
+                            </ul>
+                        </section>
+                    {/await}
+                    <button
+                        class={[
+                            "translate-y-3 group-hover/overlay:translate-y-0 opacity-0 group-hover/overlay:opacity-100 transition-all absolute z-10 bottom-3 right-3 rounded-full border-2 size-10 flex-center shadow-lg/40 overflow-hidden text-neutral-800 supports-backdrop-filter:backdrop-blur-sm group/button pointer-events-auto",
+                            isVideo && "hidden",
+                        ]}
+                        onclick={() => (showTranslations = !showTranslations)}
                     >
-                        <track default kind="captions" />
-                    </video>
-                </div>
-            {:else}
-                <div class="absolute inset-0 bottom-20">
-                    <div
-                        class="z-10 max-h-full relative group/overlay"
-                        style:aspect-ratio="{imageWidth} / {imageHeight}"
-                    >
-                        {#await extra then extra}
-                            <section class={[!showTranslations && "sr-only"]}>
-                                <h2 class="sr-only">Translations</h2>
-                                <ul>
-                                    {#each extra.translations as translation}
-                                        <Translation {translation} />
-                                    {/each}
-                                </ul>
-                            </section>
-                        {/await}
-                        <button
-                            class="translate-y-3 group-hover/overlay:translate-y-0 opacity-0 group-hover/overlay:opacity-100 transition-all absolute z-10 bottom-2 right-2 rounded-full border-2 size-10 flex-center shadow-lg/40 overflow-hidden text-neutral-800 supports-backdrop-filter:backdrop-blur-sm group/button"
-                            onclick={() =>
-                                (showTranslations = !showTranslations)}
-                        >
-                            <div
-                                class="not-supports-backdrop-filter:blur-sm absolute inset-0 -z-10 bg-neutral-500/30 group-active/button:brightness-150"
-                            ></div>
-                            <span class="sr-only">
-                                {#if showTranslations}
-                                    Hide translations
-                                {:else}
-                                    Show translations
-                                {/if}
-                            </span>
+                        <div
+                            class="not-supports-backdrop-filter:blur-sm absolute inset-0 -z-10 bg-neutral-500/30 group-active/button:brightness-150"
+                        ></div>
+                        <span class="sr-only">
                             {#if showTranslations}
-                                <i class="fa-solid fa-eye" aria-hidden="true"
-                                ></i>
+                                Hide translations
                             {:else}
-                                <i
-                                    class="fa-solid fa-eye-slash"
-                                    aria-hidden="true"
-                                ></i>
+                                Show translations
                             {/if}
-                        </button>
+                        </span>
+                        {#if showTranslations}
+                            <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                        {:else}
+                            <i class="fa-solid fa-eye-slash" aria-hidden="true"
+                            ></i>
+                        {/if}
+                    </button>
+                    {#if data.post.sample_url !== ""}
                         <Dialog.Root>
                             <Dialog.Trigger
-                                class="absolute inset-0 -z-10"
-                                disabled={data.post.sample_url === ""}
+                                class="absolute inset-0 -z-10 pointer-events-auto"
                             >
                                 <span class="sr-only">Expand post</span>
                             </Dialog.Trigger>
@@ -248,35 +221,61 @@
                                 </Dialog.Content>
                             </Dialog.Portal>
                         </Dialog.Root>
-                        <div
-                            class="h-16 mt-4 2xl:min-w-xl w-full bg-neutral-450 rounded-sm absolute -bottom-20"
-                        >
-                            <InteractionBar post={data.post} {extra} />
-                        </div>
+                    {/if}
+                    <div
+                        class="h-16 mt-4 2xl:min-w-xl w-full bg-neutral-450 rounded-sm absolute -bottom-20 pointer-events-auto"
+                    >
+                        <InteractionBar post={data.post} {extra} />
                     </div>
                 </div>
-                <div class="absolute inset-0 bottom-20 -z-10">
+            </div>
+            <div class="absolute inset-0 bottom-20 -z-10">
+                <div
+                    class="z-10 max-h-full relative group/overlay"
+                    style:aspect-ratio="{imageWidth} / {imageHeight}"
+                >
                     <div
-                        class="z-10 max-h-full relative group/overlay"
+                        class="bg-invisibles -z-10 absolute inset-0 rounded-sm overflow-hidden supports-backdrop-filter:after:backdrop-blur-sm supports-backdrop-filter:after:absolute supports-backdrop-filter:after:inset-0 not-supports-backdrop-filter:blur-sm text-transparent"
                         style:aspect-ratio="{imageWidth} / {imageHeight}"
-                    >
-                        <div
-                            class="bg-invisibles -z-10 absolute inset-0 rounded-sm overflow-hidden supports-backdrop-filter:after:backdrop-blur-sm supports-backdrop-filter:after:absolute supports-backdrop-filter:after:inset-0 not-supports-backdrop-filter:blur-sm text-transparent"
+                        aria-hidden="true"
+                        use:acquireCachedThumbnail={{
+                            postId: data.post.id,
+                            cache: thumbnailCache,
+                        }}
+                    ></div>
+                </div>
+            </div>
+            <!-- TODO: Weird firefox bug sizes this as if we don't have the pb-20 here. Probably not worth a fix -->
+            <div class="h-full pb-20 overflow-hidden min-w-0 relative">
+                <div
+                    class="max-h-full"
+                    style:aspect-ratio="{imageWidth} / {imageHeight}"
+                >
+                    {#if isVideo}
+                        {@const src = (() => {
+                            sampleUrl;
+
+                            const url = new URL(sampleUrl);
+                            const directory1 = url.pathname.slice(8, 10);
+                            const directory2 = url.pathname.slice(11, 13);
+                            const filename = url.pathname.slice(14);
+
+                            return `/video?domain=${encodeURIComponent(url.hostname)}&directory1=${directory1}&directory2=${directory2}&file=${encodeURIComponent(filename)}`;
+                        })()}
+
+                        <video
+                            {src}
+                            controls
+                            loop
+                            class="min-w-0 rounded-sm"
                             style:aspect-ratio="{imageWidth} / {imageHeight}"
-                            aria-hidden="true"
-                            use:acquireCachedThumbnail={{
-                                postId: data.post.id,
-                                cache: thumbnailCache,
-                            }}
-                        ></div>
-                    </div>
-                </div>
-                <!-- TODO: Weird firefox bug sizes this as if we don't have the pb-20 here. Probably not worth a fix -->
-                <div class="h-full pb-20 overflow-hidden min-w-0 relative">
-                    <div
-                        class="max-h-full"
-                        style:aspect-ratio="{imageWidth} / {imageHeight}"
-                    >
+                            width={imageWidth}
+                            height={imageHeight}
+                            bind:volume
+                        >
+                            <track default kind="captions" />
+                        </video>
+                    {:else}
                         <!-- TODO: This should be w-full on mobile -->
                         <!-- TODO: Image loading sometimes spontaneously fails, as Gelbooru redirects the image URL
                             to the post page for unknown reasons (rate limiting? I know the img url can be different
@@ -305,9 +304,9 @@
                                 );
                             }}
                         />
-                    </div>
+                    {/if}
                 </div>
-            {/if}
+            </div>
         </div>
 
         <div
