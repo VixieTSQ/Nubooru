@@ -58,7 +58,7 @@
             clearTimeout(widthUpdateTimeout);
             widthUpdateTimeout = setTimeout(() => {
                 manager.onWidthChange(nowMasonryWidth);
-            }, 150);
+            }, 200);
         }
     });
 
@@ -195,9 +195,6 @@
                     );
                     setTimeout(() => {
                         disableTranslationAnimation = false;
-                        // tick().then(() => {
-                        //     springUpReObserve = !springUpReObserve;
-                        // });
                     }, 500);
                 });
             },
@@ -211,76 +208,6 @@
 
         return observer;
     };
-
-    // TODO: this is awful but I'm too tired to actually figure out how to keep this state around for the classes.
-    // Really this whole thing isn't that good. It used to look a whole lot better when I was using scroll animations,
-    // but since I switched from absolute positioning to transforms, I couldn't figure it out. I should probably give it
-    // another try some time. For now, because it's completely broken on firefox, let's just remove it.
-    // let springUpReObserve = $state(false);
-    // let springUpObserver = undefined;
-    // if (browser) {
-    //     springUpObserver = new IntersectionObserver(
-    //         (entries) => {
-    //             if (page.state.expandedPost !== undefined) {
-    //                 return;
-    //             }
-
-    //             entries.forEach((entry) => {
-    //                 if (entry.boundingClientRect.top > window.innerHeight) {
-    //                     entry.target.classList.remove("post");
-    //                     entry.target.classList.add("post-before-spring-up");
-    //                     if (!entry.isIntersecting) {
-    //                         entry.target.classList.remove("spring-up");
-    //                     }
-    //                 } else if (
-    //                     entry.target.classList.contains("post-before-spring-up")
-    //                 ) {
-    //                     entry.target.classList.add("spring-up");
-    //                     entry.target.classList.remove("post-before-spring-up");
-    //                 }
-    //             });
-    //         },
-    //         {
-    //             threshold: 0.0,
-    //             rootMargin: "10px 0px -10px 0px",
-    //         },
-    //     );
-    // }
-    // const springUpOnScrollIntoViewport = (
-    //     node: HTMLElement,
-    //     opts: { isReady: boolean; refresh: boolean },
-    // ): ActionReturn<{ isReady: boolean; refresh: boolean }> => {
-    //     assert(springUpObserver !== undefined);
-
-    //     const onAnimationEnd = (event: AnimationEvent) => {
-    //         const node = event.currentTarget as HTMLElement;
-    //         node.classList.add("post");
-    //         node.classList.remove("spring-up");
-    //     };
-
-    //     if (opts.isReady) {
-    //         springUpObserver.observe(node);
-    //         node.addEventListener("animationend", onAnimationEnd);
-    //     }
-
-    //     return {
-    //         destroy: () => {
-    //             springUpObserver.unobserve(node);
-    //             node.removeEventListener("animationend", onAnimationEnd);
-    //         },
-    //         update: (opts) => {
-    //             springUpObserver.unobserve(node);
-    //             node.removeEventListener("animationend", onAnimationEnd);
-
-    //             if (opts.isReady) {
-    //                 tick().then(() => {
-    //                     springUpObserver.observe(node);
-    //                     node.addEventListener("animationend", onAnimationEnd);
-    //                 });
-    //             }
-    //         },
-    //     };
-    // };
 </script>
 
 <ul
@@ -306,10 +233,6 @@
                 brickQueue: pageLastBrickQueue,
             }}
         >
-            <!-- use:springUpOnScrollIntoViewport={{
-                isReady,
-                refresh: springUpReObserve,
-            }} -->
             {#if isPost(brick.item)}
                 <Post post={brick.item} />
             {:else}
@@ -343,80 +266,52 @@
 
 <style>
     .post {
-        transform: translate(var(--left, 0), var(--top, 0));
+        transform: translate(
+            var(--left, 0px),
+            calc(var(--top, 0px) + var(--top-offset, 0px))
+        );
     }
-
     @supports (transform: translate3d(0, 0, 0)) {
         .post {
-            transform: translate3d(var(--left, 0px), var(--top, 0px), 0);
+            transform: translate3d(
+                var(--left, 0px),
+                calc(var(--top, 0px) + var(--top-offset, 0px)),
+                0
+            );
         }
     }
 
-    /* This is... bad. Don't look. This was some very hastily written code for the spring up
-        stuff as seen above. I'll likely find a better way to do all this if I don't figure out
-        scroll animations again first */
-    /* 
     @media (prefers-reduced-motion: no-preference) {
-        :global(.post-before-spring-up) {
-            transform: translate(var(--left, 0), calc(var(--top, 0px) + 50px))
-                scale(0.9);
-            opacity: 0.85;
-        }
-
-        @keyframes spring-up {
-            0% {
-                transform: translate(
-                        var(--left, 0),
-                        calc(var(--top, 0px) + 50px)
-                    )
-                    scale(0.9);
-                opacity: 0.85;
-            }
-            100% {
-                transform: translate(
-                        var(--left, 0),
-                        calc(var(--top, 0px) + 0px)
-                    )
-                    scale(1);
-                opacity: 1;
-            }
-        }
-
-        @supports (transform: translate3d(0, 0, 0)) {
-            :global(.post-before-spring-up) {
-                transform: translate3d(
-                        var(--left, 0px),
-                        calc(var(--top, 0px) + 50px),
-                        0
-                    )
-                    scale(0.9);
-                opacity: 0.85;
+        @supports (background: paint(propjockey)) or
+            (
+                (width: 1rlh) and
+                    ((-webkit-hyphens: none) or (-moz-appearance: none))
+            ) {
+            @property --top-offset {
+                syntax: "<length>";
+                inherits: true;
+                initial-value: 0px;
             }
 
             @keyframes spring-up {
                 0% {
-                    transform: translate3d(
-                            var(--left, 0px),
-                            calc(var(--top, 0px) + 50px),
-                            0
-                        )
-                        scale(0.9);
-                    opacity: 0.85;
+                    --top-offset: 40px;
+                    opacity: 0.75;
                 }
                 100% {
-                    transform: translate3d(
-                            var(--left, 0px),
-                            calc(var(--top, 0px) + 0px),
-                            0
-                        )
-                        scale(1);
+                    --top-offset: 0px;
                     opacity: 1;
                 }
             }
-        }
 
-        :global(.spring-up) {
-            animation: spring-up ease-out 100ms forwards;
+            /* TODO: Bit of a jump here when we resize the width, probably not fixable */
+            .post {
+                animation: 1ms spring-up both;
+                animation-timeline: scroll(root);
+                animation-range: contain calc(var(--top, 0px) - 100vh + 100px)
+                    contain calc(var(--top, 0px) - 100vh + 275px);
+                opacity: 0.75;
+            }
         }
-    } */
+    }
 </style>
