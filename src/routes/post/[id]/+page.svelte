@@ -349,32 +349,32 @@
 
             <section class="self-start w-full">
                 <h2 class="sr-only">Suggested Posts</h2>
-                <ul
-                    class="flex items-start gap-4 max-h-48 justify-evenly w-full"
-                >
+                <ul class="flex items-start gap-4 h-48 justify-evenly w-full">
                     {#await extra}
                         <i class="sr-only">Loading</i>
                         {#each { length: 4 }}
                             {@const width = randomBetween(250, 180)}
+                            {@const height = randomBetween(250, 170)}
+
                             <li
-                                class="max-h-full rounded-lg bg-invisibles/75 animate-pulse"
-                                aria-hidden="true"
+                                class="grow min-w-0 h-full flex justify-center items-start"
                                 style:flex-basis="{width}px"
-                                style:aspect-ratio="{width} / {randomBetween(
-                                    250,
-                                    170,
-                                )}"
-                            ></li>
+                            >
+                                <div
+                                    class={[
+                                        "bg-invisibles/75 rounded-lg animate-pulse",
+                                        height >= width && "h-full max-w-full",
+                                        height <= width && "w-full max-h-full",
+                                    ]}
+                                    style:aspect-ratio="{width} / {height}"
+                                ></div>
+                            </li>
                         {/each}
                     {:then extra}
                         {#each extra.suggestedPosts.slice(0, 4) as suggestedPost}
-                            <!-- TODO: Prevent layout shift here as these load. I set their flex basis before
-                             but that made them overflow sometimes -->
-                            <!-- TODO: ACTUALLY STILL OVERFLOWING AA -->
                             <li
-                                class="min-w-0 max-h-full"
-                                style:aspect-ratio="{suggestedPost.preview_width}
-                                / {suggestedPost.preview_height}"
+                                class="grow min-w-0 h-full flex justify-center items-start"
+                                style:flex-basis="{suggestedPost.preview_width}px"
                             >
                                 <Post post={suggestedPost} />
                             </li>

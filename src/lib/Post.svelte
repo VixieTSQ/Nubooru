@@ -80,7 +80,13 @@
     onclick={onClick}
     class={[
         "rounded-lg overflow-hidden flex-center before:absolute before:inset-0 before:rounded-lg before:-z-10 relative",
-        !scaleDown && "before:bg-invisibles/75 size-full",
+        !scaleDown && "before:bg-invisibles/75",
+        !scaleDown &&
+            post.preview_height >= post.preview_width &&
+            "h-full max-w-full",
+        !scaleDown &&
+            post.preview_height <= post.preview_width &&
+            "w-full max-h-full",
     ]}
 >
     <i class="sr-only">
@@ -98,6 +104,8 @@
         {src}
         alt=""
         class={[!scaleDown && "object-cover size-full"]}
+        width={post.preview_width}
+        height={post.preview_height}
         onload={onLoad as any}
         use:cacheThumbnail={{ postId: post.id, cache: thumbnailCache }}
     />
